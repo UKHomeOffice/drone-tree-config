@@ -61,16 +61,17 @@ func (p *Plugin) getConfigForTree(ctx context.Context, req *request, dir string,
 		return p.getConfigForChanges(ctx, req, req.ConsiderData.listRepresentation)
 	}
 
-	ls, err := req.Client.GetFileListing(ctx, dir, req.Build.After)
-	if err != nil {
-		return "", err
-	}
-
 	if depth > p.maxDepth {
 		logrus.Infof("%s skipping scan of %s, max depth %d reached.", req.UUID, dir, depth)
 		return "", nil
 	}
 	depth += 1
+
+	ls, err := req.Client.GetFileListing(ctx, dir, req.Build.After)
+	if err != nil {
+		return "", err
+	}
+	logrus.Debugf("%s %d files listed in commit %s for folder '%s'", req.UUID, len(ls), req.Build.After, dir)
 
 	// check recursively for drone.yml
 	configData = ""
@@ -83,6 +84,7 @@ func (p *Plugin) getConfigForTree(ctx context.Context, req *request, dir string,
 			}
 		} else if f.Type == "file" && f.Name == req.Repo.Config {
 			var critical bool
+			logrus.Debugf("%s found %s in folder '%s'", req.UUID, f.Name, dir)
 			fileContent, critical, err = p.getDroneConfig(ctx, req, f.Path)
 			if critical {
 				return "", err
