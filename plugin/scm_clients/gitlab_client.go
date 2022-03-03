@@ -124,8 +124,30 @@ func (s GitlabClient) getTree(ctx context.Context, path string, commitRef string
 	opts := &gitlab.ListTreeOptions{
 		Path: &path,
 		Ref:  &commitRef,
+		ListOptions: gitlab.ListOptions{
+			PerPage: 20,
+			Page:    1,
+		},
 	}
-	return s.delegate.Repositories.ListTree(s.repo.UID, opts)
+	var treeNodes []*gitlab.TreeNode
+	for {
+		// Get the first page
+		ps, resp, err := s.delegate.Repositories.ListTree(s.repo.UID, opts)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		treeNodes = append(treeNodes, ps...)
+
+		// Exit the loop when we've seen all pages.
+		if resp.NextPage == 0 || len(treeNodes) == resp.TotalItems {
+			break
+		}
+
+		// Update the page number to get the next page.
+		opts.Page = resp.NextPage
+	}
+	return treeNodes, resp, nil
 }
 
 func (s GitlabClient) getContents(ctx context.Context, path string, commitRef string) (

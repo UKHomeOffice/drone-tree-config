@@ -101,7 +101,7 @@ func (p *Plugin) getConfig(ctx context.Context, req *request) (*drone.Config, er
 		"ref":     req.Build.Ref,
 		"slug":    req.Repo.Slug,
 		"trigger": req.Build.Trigger,
-	}).Debugf("drone-tree-config environment")
+	}).Debugf("%s drone-tree-config environment", req.UUID)
 
 	// check cache first, when enabled
 	ck := newCacheKey(req)
@@ -137,13 +137,13 @@ func (p *Plugin) getConfigData(ctx context.Context, req *request) (string, error
 	} else if req.Build.Trigger == "@cron" {
 		logrus.Warnf("%s @cron, rebuilding all", req.UUID)
 		if p.considerFile == "" {
-			logrus.Warnf("recursively scanning for config files with max depth %d", p.maxDepth)
+			logrus.Warnf("%s recursively scanning for config files with max depth %d", req.UUID, p.maxDepth)
 		}
 		configData, err = p.getConfigForTree(ctx, req, "", 0)
 	} else if p.fallback {
 		logrus.Warnf("%s no changed files and fallback enabled, rebuilding all", req.UUID)
 		if p.considerFile == "" {
-			logrus.Warnf("recursively scanning for config files with max depth %d", p.maxDepth)
+			logrus.Warnf("%s recursively scanning for config files with max depth %d", req.UUID, p.maxDepth)
 		}
 		configData, err = p.getConfigForTree(ctx, req, "", 0)
 	}
